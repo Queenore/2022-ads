@@ -8,8 +8,7 @@ import java.util.*;
  *
  * @author Dmitry Schitinin
  * <p>
- *
- * https://www.eolymp.com/ru/submissions/12355255
+ * https://www.eolymp.com/ru/submissions/12617066
  */
 public final class GraphLoop {
     private GraphLoop() {
@@ -19,8 +18,6 @@ public final class GraphLoop {
     private enum Color {
         WHITE, GRAY, BLACK
     }
-
-    private static boolean wasLoop;
 
     private static void solve(final FastScanner in, final PrintWriter out) throws IOException {
         if (!in.reader.ready()) {
@@ -32,7 +29,6 @@ public final class GraphLoop {
         int edgesNumber = in.nextInt();
         ArrayList<Integer>[] graph = new ArrayList[vertexNumber];
         Color[] visited = new Color[vertexNumber];
-        int min = Integer.MAX_VALUE;
 
         for (int i = 0; i < vertexNumber; i++) {
             graph[i] = new ArrayList<>();
@@ -40,43 +36,52 @@ public final class GraphLoop {
         }
 
         for (int i = 0; i < edgesNumber; i++) {
-            int firstVert = in.nextInt();
-            int secondVert = in.nextInt();
-            graph[firstVert - 1].add(secondVert - 1);
-            graph[secondVert - 1].add(firstVert - 1);
+            int firstVert = in.nextInt() - 1;
+            int secondVert = in.nextInt() - 1;
+            graph[firstVert].add(secondVert);
+            graph[secondVert].add(firstVert);
         }
 
-        for (int currVertex = 0; currVertex < vertexNumber; currVertex++) {
+        int min = Integer.MAX_VALUE;
+        Set<Integer> loopSet = new TreeSet<>();
+        for (int currVertex = 1; currVertex < vertexNumber; currVertex++) {
             if (visited[currVertex] == Color.WHITE) {
-                Stack<Integer> stack = new Stack<>();
-                dfs(visited, graph, stack, null, currVertex);
-                if (wasLoop) {
-                    while (!stack.isEmpty()) {
-                        int stackVertex = stack.pop();
-                        if (stackVertex < min) {
-                            min = stackVertex;
-                        }
-                    }
-                    wasLoop = false;
-                }
+                Stack<Integer> mainStack = new Stack<>();
+                dfs(visited, graph, mainStack, loopSet, null, currVertex);
+            }
+        }
+
+        for (Integer element : loopSet) {
+            if (element < min) {
+                min = element;
             }
         }
 
         out.println((min < Integer.MAX_VALUE) ? "Yes\n" + (min + 1) : "No");
     }
 
-    private static void dfs(Color[] visited, List<Integer>[] graph, Stack<Integer> stack, Integer fromVertex, Integer toVertex) {
+    private static void dfs(Color[] visited, List<Integer>[] graph,
+                            Stack<Integer> mainStack, Set<Integer> loopSet, Integer fromVertex, Integer toVertex) {
         visited[toVertex] = Color.GRAY;
+        int prevLoopSetSize = loopSet.size();
         for (Integer currVertex : graph[toVertex]) {
             if (Objects.equals(fromVertex, currVertex)) {
                 continue;
             }
-            stack.push(currVertex);
             Color visitedCurrState = visited[currVertex];
             if (visitedCurrState == Color.WHITE) {
-                dfs(visited, graph, stack, toVertex, currVertex);
+                mainStack.push(currVertex);
+                dfs(visited, graph, mainStack, loopSet, toVertex, currVertex);
             } else if (visitedCurrState == Color.GRAY) {
-                wasLoop = true;
+                loopSet.add(currVertex);
+                while (mainStack.size() > 0 && !Objects.equals(mainStack.peek(), currVertex)) {
+                    loopSet.add(mainStack.pop());
+                }
+            }
+        }
+        if (loopSet.size() == prevLoopSetSize) { // was loop?
+            while (mainStack.size() > 0 && !Objects.equals(mainStack.peek(), fromVertex)) {
+                mainStack.pop();
             }
         }
         visited[toVertex] = Color.BLACK;
