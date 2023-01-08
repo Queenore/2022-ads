@@ -8,7 +8,7 @@ import java.util.*;
  *
  * @author Dmitry Schitinin
  * <p>
- * https://www.eolymp.com/ru/submissions/12617066
+ * https://www.eolymp.com/ru/submissions/12621000
  */
 public final class GraphLoop {
     private GraphLoop() {
@@ -63,7 +63,7 @@ public final class GraphLoop {
     private static void dfs(Color[] visited, List<Integer>[] graph,
                             Stack<Integer> mainStack, Set<Integer> loopSet, Integer fromVertex, Integer toVertex) {
         visited[toVertex] = Color.GRAY;
-        int prevLoopSetSize = loopSet.size();
+        boolean wasLoop = false;
         for (Integer currVertex : graph[toVertex]) {
             if (Objects.equals(fromVertex, currVertex)) {
                 continue;
@@ -73,13 +73,14 @@ public final class GraphLoop {
                 mainStack.push(currVertex);
                 dfs(visited, graph, mainStack, loopSet, toVertex, currVertex);
             } else if (visitedCurrState == Color.GRAY) {
+                wasLoop = true;
                 loopSet.add(currVertex);
                 while (mainStack.size() > 0 && !Objects.equals(mainStack.peek(), currVertex)) {
                     loopSet.add(mainStack.pop());
                 }
             }
         }
-        if (loopSet.size() == prevLoopSetSize) { // was loop?
+        if (!wasLoop) {
             while (mainStack.size() > 0 && !Objects.equals(mainStack.peek(), fromVertex)) {
                 mainStack.pop();
             }
