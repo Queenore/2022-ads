@@ -2,13 +2,14 @@ package company.vk.polis.ads.graph;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Problem solution template.
  *
  * @author Dmitry Schitinin
  *
- * https://www.eolymp.com/ru/submissions/12353834
+ * https://www.eolymp.com/ru/submissions/12720677
  */
 public final class StronglyConnectedComponent {
     private StronglyConnectedComponent() {
@@ -16,14 +17,13 @@ public final class StronglyConnectedComponent {
     }
 
     private enum Color {
-        WHITE, GRAY, BLACK
+        WHITE, GRAY, BLACK, PURPLE
     }
 
     private static void solve(final FastScanner in, final PrintWriter out) {
         int vertexNumber = in.nextInt();
         int edgesNumber = in.nextInt();
         ArrayList<Integer>[] graph = new ArrayList[vertexNumber];
-        int[] sccId = new int[vertexNumber];
         Color[] visited = new Color[vertexNumber];
 
         for (int i = 0; i < vertexNumber; i++) {
@@ -37,56 +37,69 @@ public final class StronglyConnectedComponent {
             graph[firstVert - 1].add(secondVert - 1);
         }
 
-        Deque<Integer> topSort = new ArrayDeque<>();
+        Deque<Integer> topSortDeque = new ArrayDeque<>();
         for (int i = 0; i < vertexNumber; i++) {
             if (visited[i] == Color.WHITE) {
-                topSort(visited, topSort, graph, i);
+                topSort(visited, topSortDeque, graph, i);
             }
+        }
+
+        for (int i = 0; i < vertexNumber; i++) {
+            visited[i] = Color.WHITE;
         }
 
         ArrayList<Integer>[] transposeGraph = transpose(graph, vertexNumber);
-        int id = 1;
-        for (Integer vertex : topSort) {
-            if (sccId[vertex] > 0) {
-                scc(transposeGraph, sccId, id, vertex);
-            }
-            id++;
-        }
-
-        Set<Integer> set = new TreeSet<>();
-        for (int i = 0; i < sccId.length; i ++) {
-            if (transposeGraph[i].size() > 0) {
-                set.add(sccId[i]);
-            }
-        }
-
-        out.println(set.size() - 1);
-    }
-
-    private static void scc(ArrayList<Integer>[] graph, int[] sccId, int id, int vertex) {
-        Deque<Integer> deque = new ArrayDeque<>();
-        deque.add(vertex);
-        while (!deque.isEmpty()) {
-            int dequeVertex = deque.poll();
-            for (Integer currVertex : graph[dequeVertex]) {
-                if (sccId[currVertex] == 0) {
-                    sccId[currVertex] = id;
-                    deque.addFirst(currVertex);
+        Stack<Integer> vertexStack = new Stack<>();
+        int[] sccId = new int[vertexNumber];
+        for (Integer vertex : topSortDeque) {
+            if (visited[vertex] == Color.WHITE) {
+                dfs(transposeGraph, visited, vertex, vertexStack, sccId, vertex); // using vertex number as id
+                while (!vertexStack.isEmpty()) {
+                    visited[vertexStack.pop()] = Color.BLACK;
                 }
             }
         }
-        sccId[vertex] = id;
+
+        HashSet<Integer>[] connSet = new HashSet[vertexNumber];
+        for (int vertex = 0; vertex < vertexNumber; vertex++) {
+            int vertexId = sccId[vertex];
+            if (connSet[vertexId] == null) {
+                connSet[vertexId] = new HashSet<>();
+            }
+            for (Integer neighbourVertex : graph[vertex]) {
+                int neighbourVertexId = sccId[neighbourVertex];
+                if (vertexId != neighbourVertexId) {
+                    connSet[vertexId].add(neighbourVertexId);
+                }
+            }
+        }
+
+        out.println(Arrays.stream(connSet).filter(Objects::nonNull).collect(Collectors.summarizingInt(HashSet::size)).getSum());
     }
 
-    private static void topSort(Color[] visited, Deque<Integer> topSort, List<Integer>[] graph, int vertex) {
+    private static void dfs(ArrayList<Integer>[] graph, Color[] visited, int vertex,
+                            Stack<Integer> vertexStack, int[] sccId, int id) {
+        visited[vertex] = Color.GRAY;
+        vertexStack.push(vertex);
+        sccId[vertex] = id;
+        for (int neighbourVertex : graph[vertex]) {
+            Color currColor = visited[neighbourVertex];
+            if (currColor == Color.WHITE) {
+                dfs(graph, visited, neighbourVertex, vertexStack, sccId, id);
+            }
+        }
+        visited[vertex] = Color.PURPLE;
+    }
+
+    private static void topSort(Color[] visited, Deque<Integer> topSortDeque, List<Integer>[] graph, int vertex) {
         visited[vertex] = Color.BLACK;
         for (Integer currVertex : graph[vertex]) {
             Color visitedCurrState = visited[currVertex];
             if (visitedCurrState == Color.WHITE) {
-                topSort(visited, topSort, graph, currVertex);
+                topSort(visited, topSortDeque, graph, currVertex);
             }
         }
-        topSort.addFirst(vertex);
+        topSortDeque.addFirst(vertex);
     }
 
     private static ArrayList<Integer>[] transpose(List<Integer>[] graph, int vertexNumber) {
@@ -133,4 +146,3 @@ public final class StronglyConnectedComponent {
         }
     }
 }
-

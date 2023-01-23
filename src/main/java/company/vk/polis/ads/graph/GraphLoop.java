@@ -60,8 +60,8 @@ public final class GraphLoop {
         out.println((min < Integer.MAX_VALUE) ? "Yes\n" + (min + 1) : "No");
     }
 
-    private static void dfs(Color[] visited, List<Integer>[] graph,
-                            Stack<Integer> mainStack, Set<Integer> loopSet, Integer fromVertex, Integer toVertex) {
+    private static void dfs(Color[] visited, List<Integer>[] graph, Stack<Integer> mainStack,
+                            Set<Integer> loopSet, Integer fromVertex, Integer toVertex) {
         visited[toVertex] = Color.GRAY;
         boolean wasLoop = false;
         for (Integer currVertex : graph[toVertex]) {
